@@ -1,0 +1,42 @@
+# Sensitive Files
+*.key
+*.pem
+*.env
+*secret*
+*password*
+*token*
+
+# Config directories with sensitive data
+config/
+data/
+*.db
+*.sqlite
+
+# MikroTik sensitive configs
+*_backup_*.rsc
+*.backup
+
+# Logs
+*.log
+logs/
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+
+# Personal notes
+NOTES.md
+TODO.md

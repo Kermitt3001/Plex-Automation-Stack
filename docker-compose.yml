@@ -1,0 +1,163 @@
+
+
+services:
+  # ═══════════════════════════════════════════════════════════════════════
+  # PLEX MEDIA SERVER
+  # ═══════════════════════════════════════════════════════════════════════
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    network_mode: host  # CRITICAL: Required for external access and UPnP
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Country/Region  # Change to your timezone
+      - VERSION=docker
+      - PLEX_CLAIM=  # Optional: Get from https://www.plex.tv/claim/
+    volumes:
+      - /path/to/plex/config:/config
+      - /path/to/media:/media
+      # Optional: Transcode directory on SSD for performance
+      - /path/to/transcode:/transcode
+    restart: unless-stopped
+    # Hardware transcoding (if supported)
+    devices:
+      - /dev/dri:/dev/dri  # Intel Quick Sync
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # SONARR - TV Show Management
+  # ═══════════════════════════════════════════════════════════════════════
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Country/Region
+    volumes:
+      - /path/to/sonarr/config:/config
+      - /path/to/media/tv:/tv
+      - /path/to/downloads:/downloads
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # RADARR - Movie Management
+  # ═══════════════════════════════════════════════════════════════════════
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Country/Region
+    volumes:
+      - /path/to/radarr/config:/config
+      - /path/to/media/movies:/movies
+      - /path/to/downloads:/downloads
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # BAZARR - Subtitle Management
+  # ═══════════════════════════════════════════════════════════════════════
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Country/Region
+    volumes:
+      - /path/to/bazarr/config:/config
+      - /path/to/media/movies:/movies
+      - /path/to/media/tv:/tv
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # QBITTORRENT - Download Client
+  # ═══════════════════════════════════════════════════════════════════════
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Country/Region
+      - WEBUI_PORT=8080
+    volumes:
+      - /path/to/qbittorrent/config:/config
+      - /path/to/downloads:/downloads
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # PROWLARR - Indexer Manager
+  # ═══════════════════════════════════════════════════════════════════════
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Country/Region
+    volumes:
+      - /path/to/prowlarr/config:/config
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # OVERSEERR - Request Management
+  # ═══════════════════════════════════════════════════════════════════════
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Country/Region
+    volumes:
+      - /path/to/overseerr/config:/config
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # TAUTULLI - Plex Monitoring
+  # ═══════════════════════════════════════════════════════════════════════
+  tautulli:
+    image: lscr.io/linuxserver/tautulli:latest
+    container_name: tautulli
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Country/Region
+    volumes:
+      - /path/to/tautulli/config:/config
+    restart: unless-stopped
+
+# ═══════════════════════════════════════════════════════════════════════
+# NOTES
+# ═══════════════════════════════════════════════════════════════════════
+# 
+# 1. Change ALL /path/to/ to your actual paths
+# 2. Ensure PUID/PGID match your user: id $USER
+# 3. Update timezone (TZ) to your location
+# 4. For hardlinks to work, downloads and media must be on same filesystem
+# 5. Plex MUST use network_mode: host for external access
+# 6. Other services can use bridge networking if preferred
+# 
+# Storage structure example:
+# /data/
+#   ├── config/
+#   │   ├── plex/
+#   │   ├── sonarr/
+#   │   ├── radarr/
+#   │   └── ...
+#   ├── media/
+#   │   ├── movies/
+#   │   └── tv/
+#   └── downloads/
+#       ├── complete/
+#       └── incomplete/
