@@ -92,6 +92,31 @@ qBittorrent → MikroTik (Mangle mark-routing) → VPN Routing Table → NordVPN
 - **Subtitle Management**: Bazarr for automatic subtitle downloads
 - **User Requests**: Overseerr provides Netflix-like interface for content requests
 
+### ⚡ Performance Optimization
+
+This stack has been optimized for efficient transcoding:
+
+#### ✅ Subtitle Optimization (Bazarr)
+- **Problem:** Image-based subtitles (PGS) require CPU-intensive OCR burn-in
+- **Solution:** Bazarr automatically downloads text-based SRT subtitles
+- **Impact:** 40-60% CPU reduction per stream
+
+#### ✅ Hardware Transcoding (Intel QuickSync)
+- **Problem:** Video transcoding on CPU uses 60-80% per stream
+- **Solution:** GPU passthrough in Proxmox enables Intel QuickSync
+- **Impact:** 85% CPU reduction, 3-5 simultaneous transcodes possible
+
+#### Performance Results
+| Scenario | Before Optimization | After Optimization |
+|----------|-------------------|-------------------|
+| 1x Remote Transcode | 205% CPU | 20-30% CPU |
+| Power Consumption | ~35W | ~20W |
+| Max Concurrent Streams | 1 | 4-5 |
+
+**See detailed guides:**
+- [Transcoding Optimization](docs/TRANSCODING-OPTIMIZATION.md)
+- [GPU Passthrough Setup](docs/GPU-PASSTHROUGH.md)
+
 ### 🔒 Security & Privacy
 - **VPN Protection**: All torrent traffic routed through NordVPN WireGuard
 - **Split Tunneling**: Plex bypasses VPN for optimal streaming performance

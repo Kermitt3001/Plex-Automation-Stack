@@ -20,9 +20,11 @@ services:
       # Optional: Transcode directory on SSD for performance
       - /path/to/transcode:/transcode
     restart: unless-stopped
-    # Hardware transcoding (if supported)
+    # Hardware transcoding (Intel QuickSync)
+    # CRITICAL: Requires GPU passthrough in Proxmox (see docs/GPU-PASSTHROUGH.md)
+    # Reduces CPU usage by 60-80% during video transcoding
     devices:
-      - /dev/dri:/dev/dri  # Intel Quick Sync
+      - /dev/dri:/dev/dri  # Intel Quick Sync GPU
 
   # ═══════════════════════════════════════════════════════════════════════
   # SONARR - TV Show Management
@@ -61,10 +63,12 @@ services:
   # ═══════════════════════════════════════════════════════════════════════
   # BAZARR - Subtitle Management
   # ═══════════════════════════════════════════════════════════════════════
+  # CRITICAL for transcoding optimization: Downloads SRT subtitles to avoid
+  # CPU-intensive PGS→ASS subtitle burn-in (reduces CPU by 40-60% per stream)
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
-    network_mode: host
+    network_mode: host  # Required for communication with Sonarr/Radarr
     environment:
       - PUID=1000
       - PGID=1000
@@ -74,6 +78,8 @@ services:
       - /path/to/media/movies:/movies
       - /path/to/media/tv:/tv
     restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   # ═══════════════════════════════════════════════════════════════════════
   # QBITTORRENT - Download Client
