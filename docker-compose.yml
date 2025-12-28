@@ -17,7 +17,7 @@ services:
       - PGID=1000  # ID Group (sprawdź: id -g)
       - VERSION=docker
       - TZ=Region/City
-      - PLEX_CLAIM=claim-Njvadc23R7Nhx1vMtAx4  # Download z https://www.plex.tv/claim/
+      - PLEX_CLAIM=<YOUR_CLAIM> # Download z https://www.plex.tv/claim/
     volumes:
       - /opt/docker/config/plex:/config
       - /opt/docker/media/tv:/tv:ro
