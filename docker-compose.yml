@@ -1,121 +1,118 @@
 
+# ============================================
+# MEDIA STACK DOCKER COMPOSE
+# Plex + Sonarr + Radarr + Bazarr + qBittorrent
+# ============================================
 
 services:
-  # ═══════════════════════════════════════════════════════════════════════
+  # ==========================================
   # PLEX MEDIA SERVER
-  # ═══════════════════════════════════════════════════════════════════════
+  # ==========================================
   plex:
     image: lscr.io/linuxserver/plex:latest
     container_name: plex
-    network_mode: host  # CRITICAL: Required for external access and UPnP
+    network_mode: host  # Wymagane dla DLNA i wykrywania
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Country/Region  # Change to your timezone
+      - PUID=1000  # ID użytkownika (sprawdź: id -u)
+      - PGID=1000  # ID grupy (sprawdź: id -g)
       - VERSION=docker
-      - PLEX_CLAIM=  # Optional: Get from https://www.plex.tv/claim/
+      - TZ=Australia/Sydney
+      - PLEX_CLAIM=claim-Njvadc23R7Nhx1vMtAx4  # Pobierz z https://www.plex.tv/claim/
     volumes:
-      - /path/to/plex/config:/config
-      - /path/to/media:/media
-      # Optional: Transcode directory on SSD for performance
-      - /path/to/transcode:/transcode
-    restart: unless-stopped
-    # Hardware transcoding (Intel QuickSync)
-    # CRITICAL: Requires GPU passthrough in Proxmox (see docs/GPU-PASSTHROUGH.md)
-    # Reduces CPU usage by 60-80% during video transcoding
+      - /opt/docker/config/plex:/config
+      - /opt/docker/media/tv:/tv:ro
+      - /opt/docker/media/movies:/movies:ro
+      - /opt/docker/media/music:/music:ro
+      - /opt/docker/media/photos:/photos:ro
+      - /tmp/transcoding:/transcode  # Transkodowanie w RAM (opcjonalne)
     devices:
-      - /dev/dri:/dev/dri  # Intel Quick Sync GPU
-
-  # ═══════════════════════════════════════════════════════════════════════
-  # SONARR - TV Show Management
-  # ═══════════════════════════════════════════════════════════════════════
-  sonarr:
-    image: lscr.io/linuxserver/sonarr:latest
-    container_name: sonarr
-    network_mode: host
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Country/Region
-    volumes:
-      - /path/to/sonarr/config:/config
-      - /path/to/media/tv:/tv
-      - /path/to/downloads:/downloads
-    restart: unless-stopped
-
-  # ═══════════════════════════════════════════════════════════════════════
-  # RADARR - Movie Management
-  # ═══════════════════════════════════════════════════════════════════════
-  radarr:
-    image: lscr.io/linuxserver/radarr:latest
-    container_name: radarr
-    network_mode: host
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Country/Region
-    volumes:
-      - /path/to/radarr/config:/config
-      - /path/to/media/movies:/movies
-      - /path/to/downloads:/downloads
-    restart: unless-stopped
-
-  # ═══════════════════════════════════════════════════════════════════════
-  # BAZARR - Subtitle Management
-  # ═══════════════════════════════════════════════════════════════════════
-  # CRITICAL for transcoding optimization: Downloads SRT subtitles to avoid
-  # CPU-intensive PGS→ASS subtitle burn-in (reduces CPU by 40-60% per stream)
-  bazarr:
-    image: lscr.io/linuxserver/bazarr:latest
-    container_name: bazarr
-    network_mode: host  # Required for communication with Sonarr/Radarr
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Country/Region
-    volumes:
-      - /path/to/bazarr/config:/config
-      - /path/to/media/movies:/movies
-      - /path/to/media/tv:/tv
+      - /dev/dri:/dev/dri  # Hardware acceleration (Intel QuickSync)
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
-  # ═══════════════════════════════════════════════════════════════════════
-  # QBITTORRENT - Download Client
-  # ═══════════════════════════════════════════════════════════════════════
+  # ==========================================
+  # SONARR - TV Shows Management
+  # ==========================================
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    network_mode: host          # Needs
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Australia/Sydney
+    volumes:
+      - /opt/docker/config/sonarr:/config
+      - /opt/docker/media:/data
+    restart: unless-stopped
+    depends_on:
+      - qbittorrent
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # ==========================================
+  # RADARR - Movies Management
+  # ==========================================
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    network_mode: host          # Needs
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Australia/Sydney
+    volumes:
+      - /opt/docker/config/radarr:/config
+      - /opt/docker/media:/data
+    restart: unless-stopped
+    depends_on:
+      - qbittorrent
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # ==========================================
+  # BAZARR - Subtitles Management
+  # ==========================================
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Australia/Sydney
+    volumes:
+      - /opt/docker/config/bazarr:/config
+      - /opt/docker/media:/data
+    restart: unless-stopped
+    depends_on:
+      - sonarr
+      - radarr
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # ==========================================
+  # QBITTORRENT - Download Client (Legal Only)
+  # ==========================================
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
-    network_mode: host
+    network_mode: host          # Needs
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Country/Region
+      - TZ=Australia/Sydney
       - WEBUI_PORT=8080
     volumes:
-      - /path/to/qbittorrent/config:/config
-      - /path/to/downloads:/downloads
+      - /opt/docker/config/qbittorrent:/config
+      - /opt/docker/media:/data
     restart: unless-stopped
 
-  # ═══════════════════════════════════════════════════════════════════════
-  # PROWLARR - Indexer Manager
-  # ═══════════════════════════════════════════════════════════════════════
-  prowlarr:
-    image: lscr.io/linuxserver/prowlarr:latest
-    container_name: prowlarr
-    network_mode: host
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Country/Region
-    volumes:
-      - /path/to/prowlarr/config:/config
-    restart: unless-stopped
 
-  # ═══════════════════════════════════════════════════════════════════════
+  # ==========================================
   # OVERSEERR - Request Management
-  # ═══════════════════════════════════════════════════════════════════════
+  # ==========================================
   overseerr:
     image: lscr.io/linuxserver/overseerr:latest
     container_name: overseerr
@@ -123,14 +120,93 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Country/Region
+      - TZ=Australia/Sydney
     volumes:
-      - /path/to/overseerr/config:/config
+      - /opt/docker/config/overseerr:/config
+    restart: unless-stopped
+    depends_on:
+      - plex
+      - sonarr
+      - radarr
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # ==========================================
+  # WATCHTOWER - Auto Updates (Optional)
+  # ==========================================
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    network_mode: host          # Needs
+    environment:
+      - TZ=Australia/Sydney
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=86400  # 24 hours
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_SCHEDULE=0 0 4 * * *
+      - WATCHTOWER_HTTP_API_TIMEOUT=300
+      - WATCHTOWER_HTTP_API_UPDATE_TIMEOUT=600
+      - DOCKER_API_VERSION=1.44
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
 
-  # ═══════════════════════════════════════════════════════════════════════
-  # TAUTULLI - Plex Monitoring
-  # ═══════════════════════════════════════════════════════════════════════
+  # ==========================================
+  # PORTAINER - Docker Management UI (Optional)
+  # ==========================================
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    network_mode: host          # Needs
+    command: -H unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/docker/config/portainer:/data
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false" 
+
+
+  # ==========================================
+  # PROWLARR - Zarzadzanie Bibliotekami i zlecenia do qbtorrent
+  # ==========================================
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Australia/Sydney
+    volumes:
+      - /opt/docker/config/prowlarr:/config
+    ports:
+      - "9696:9696"
+    restart: unless-stopped
+
+  # ==========================================
+  # Sabnzd - Library Management and Request to qbtorrent
+  # Apply if you use Usenet
+  # ==========================================
+#  sabnzbd:
+#    image: lscr.io/linuxserver/sabnzbd:latest
+#    container_name: sabnzbd
+#    environment:
+#      - PUID=1000
+#      - PGID=1000
+#      - TZ=Europe/Warsaw
+#    volumes:
+#      - /path/to/sabnzbd/config:/config
+#      - /opt/docker/media/downloads:/downloads
+#      - /opt/docker/media/downloads/incomplete:/incomplete-downloads
+#    ports:
+#      - "8085:8085"  # WebUI (zmieniony z 8080 bo qBit zajmuje)
+#    restart: unless-stopped
+
+
+
+  # ==========================================
+  # Tautulli - Statistics from Plex
+  # ==========================================
   tautulli:
     image: lscr.io/linuxserver/tautulli:latest
     container_name: tautulli
@@ -138,32 +214,42 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Country/Region
+      - TZ=Australia/Sydney
     volumes:
-      - /path/to/tautulli/config:/config
+      - /opt/docker/config/tautulli:/config
     restart: unless-stopped
 
-# ═══════════════════════════════════════════════════════════════════════
-# NOTES
-# ═══════════════════════════════════════════════════════════════════════
-# 
-# 1. Change ALL /path/to/ to your actual paths
-# 2. Ensure PUID/PGID match your user: id $USER
-# 3. Update timezone (TZ) to your location
-# 4. For hardlinks to work, downloads and media must be on same filesystem
-# 5. Plex MUST use network_mode: host for external access
-# 6. Other services can use bridge networking if preferred
-# 
-# Storage structure example:
-# /data/
-#   ├── config/
-#   │   ├── plex/
-#   │   ├── sonarr/
-#   │   ├── radarr/
-#   │   └── ...
-#   ├── media/
-#   │   ├── movies/
-#   │   └── tv/
-#   └── downloads/
-#       ├── complete/
-#       └── incomplete/
+
+  # ==========================================
+  # Flaresolverr - Cloudflare resolve
+  # ==========================================
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    environment:
+      - LOG_LEVEL=info
+      - TZ=Australia/Sydney
+    ports:
+      - "8191:8191" 
+    restart: unless-stopped
+
+# ============================================
+# NETWORKS
+# ============================================
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+# ============================================
+# VOLUMES (optional if needed named volumes)
+# ============================================
+volumes:
+  plex-config:
+    driver: local
+  sonarr-config:
+    driver: local
+  radarr-config:
+    driver: local
