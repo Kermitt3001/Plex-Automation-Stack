@@ -11,13 +11,13 @@ services:
   plex:
     image: lscr.io/linuxserver/plex:latest
     container_name: plex
-    network_mode: host  # Wymagane dla DLNA i wykrywania
+    network_mode: host  
     environment:
-      - PUID=1000  # ID użytkownika (sprawdź: id -u)
-      - PGID=1000  # ID grupy (sprawdź: id -g)
+      - PUID=1000  # ID User (sprawdź: id -u)
+      - PGID=1000  # ID Group (sprawdź: id -g)
       - VERSION=docker
-      - TZ=Australia/Sydney
-      - PLEX_CLAIM=claim-Njvadc23R7Nhx1vMtAx4  # Pobierz z https://www.plex.tv/claim/
+      - TZ=Region/City
+      - PLEX_CLAIM=claim-Njvadc23R7Nhx1vMtAx4  # Download z https://www.plex.tv/claim/
     volumes:
       - /opt/docker/config/plex:/config
       - /opt/docker/media/tv:/tv:ro
@@ -41,7 +41,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Australia/Sydney
+      - TZ=Region/City
     volumes:
       - /opt/docker/config/sonarr:/config
       - /opt/docker/media:/data
@@ -61,7 +61,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Australia/Sydney
+      - TZ=Region/City
     volumes:
       - /opt/docker/config/radarr:/config
       - /opt/docker/media:/data
@@ -81,7 +81,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Australia/Sydney
+      - TZ=Region/City
     volumes:
       - /opt/docker/config/bazarr:/config
       - /opt/docker/media:/data
@@ -102,7 +102,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Australia/Sydney
+      - TZ=Region/City
       - WEBUI_PORT=8080
     volumes:
       - /opt/docker/config/qbittorrent:/config
@@ -120,7 +120,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Australia/Sydney
+      - TZ=Region/City
     volumes:
       - /opt/docker/config/overseerr:/config
     restart: unless-stopped
@@ -139,7 +139,7 @@ services:
     container_name: watchtower
     network_mode: host          # Needs
     environment:
-      - TZ=Australia/Sydney
+      - TZ=Region/City
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_POLL_INTERVAL=86400  # 24 hours
       - WATCHTOWER_LABEL_ENABLE=true
@@ -176,7 +176,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Australia/Sydney
+      - TZ=Region/City
     volumes:
       - /opt/docker/config/prowlarr:/config
     ports:
@@ -193,7 +193,7 @@ services:
 #    environment:
 #      - PUID=1000
 #      - PGID=1000
-#      - TZ=Europe/Warsaw
+#      - TZ=Region/City
 #    volumes:
 #      - /path/to/sabnzbd/config:/config
 #      - /opt/docker/media/downloads:/downloads
@@ -214,7 +214,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Australia/Sydney
+      - TZ=Region/City
     volumes:
       - /opt/docker/config/tautulli:/config
     restart: unless-stopped
@@ -228,7 +228,7 @@ services:
     container_name: flaresolverr
     environment:
       - LOG_LEVEL=info
-      - TZ=Australia/Sydney
+      - TZ=Region/City
     ports:
       - "8191:8191" 
     restart: unless-stopped
